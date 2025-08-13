@@ -63,24 +63,19 @@ class FactorialResource(MethodView):
         if not operation:
             abort(404, message="Operation 'factorial' not found.")
 
-        input_str = str(data.n)
-        cached = OperationLogModel.query.filter_by(
-            operation_id=operation.id,
-            input_value=input_str
-        ).first()
-
-        result = cached.output_value if cached else compute_factorial(data.n)
+        result = compute_factorial(data.n)
 
         log = OperationLogModel(
             user_id=user.id,
             operation_id=operation.id,
-            input_value=input_str,
+            input_value=str(data.n),
             output_value=str(result)
         )
         db.session.add(log)
         db.session.commit()
 
         return jsonify({"result": float(result)})
+
 
 @blp.route("/pow")
 class PowResource(MethodView):
@@ -96,24 +91,19 @@ class PowResource(MethodView):
         if not operation:
             abort(404, message="Operation 'pow' not found.")
 
-        input_str = f"{data.base},{data.exponent}"
-        cached = OperationLogModel.query.filter_by(
-            operation_id=operation.id,
-            input_value=input_str
-        ).first()
-
-        result = cached.output_value if cached else compute_pow(data.base, data.exponent)
+        result = compute_pow(data.base, data.exponent)
 
         log = OperationLogModel(
             user_id=user.id,
             operation_id=operation.id,
-            input_value=input_str,
+            input_value=f"{data.base},{data.exponent}",
             output_value=str(result)
         )
         db.session.add(log)
         db.session.commit()
 
         return jsonify({"result": float(result)})
+
 
 @blp.route("/fibonacci")
 class FibonacciResource(MethodView):
@@ -129,18 +119,12 @@ class FibonacciResource(MethodView):
         if not operation:
             abort(404, message="Operation 'fibonacci' not found.")
 
-        input_str = str(data.n)
-        cached = OperationLogModel.query.filter_by(
-            operation_id=operation.id,
-            input_value=input_str
-        ).first()
-
-        result = cached.output_value if cached else compute_fibonacci(data.n)
+        result = compute_fibonacci(data.n)
 
         log = OperationLogModel(
             user_id=user.id,
             operation_id=operation.id,
-            input_value=input_str,
+            input_value=str(data.n),
             output_value=str(result)
         )
         db.session.add(log)

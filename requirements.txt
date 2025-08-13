@@ -7,3 +7,4 @@ passlib
 flask-migrate
 pydantic
 pydantic[email]
+lru_cache

@@ -46,12 +46,13 @@ A JWT-secured RESTful microservice that allows users to perform core mathematica
 
 ```
 app/
+├── migrations/     → contains Alembic-generated database migration scripts
 ├── models/         → ORM models: User, Operation, OperationLog
 ├── routes/         → REST endpoints grouped by feature
-├── schemas         → Marshmallow validation and serialization
+├── schemas/        → Pydantic validation and serialization
 ├── services/       → Business logic (math functions, utilities)
 ├── config.py       → App configuration (JWT secret, DB URI)
-run.py              → App entry point
+app.py              → App entry point
 ```
 
 ---
@@ -59,18 +60,18 @@ run.py              → App entry point
 ##  Libraries & Frameworks
 
 - **Flask** – Micro web framework  
-- **Flask-Smorest** – API management + Swagger docs  
-- **SQLAlchemy** – Database ORM (with SQLite backend)  
-- **Flask-SQLAlchemy** – Integration layer between Flask and SQLAlchemy  
-- **Marshmallow** – Request/response validation  
+- **Flask-Smorest** – Blueprint-based API with Swagger documentation 
+- **SQLAlchemy** – Database ORM (with SQLite backend)
+- **Flask-SQLAlchemy** – Integration layer between Flask and SQLAlchemy   
+- **Pydantic** – Request validation and serialization 
 - **Flask-JWT-Extended** – JWT-based authentication  
 - **Flask-Migrate** – Database schema migrations using Alembic  
 - **Passlib** – Secure password hashing (e.g., bcrypt)  
-- **Python-Dotenv** – Loads environment variables from `.env` files into Flask config  
-
+- **Python-Dotenv** – Loads environment variables from `.env` files into Flask config
+- **functools.lru_cache** – In-memory caching for performance optimization
 ## Author
 
-Name : Ghiuta Cristian-Daniel 
+Name : Ghiuta Cristian-Daniel
 
 Location : Iasi (ISD)
 
