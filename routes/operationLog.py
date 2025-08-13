@@ -1,75 +1,75 @@
 from flask.views import MethodView
-from flask_smorest import Blueprint,abort
-from flask_jwt_extended import  jwt_required,get_jwt_identity
+from flask import request, jsonify
+from flask_smorest import Blueprint, abort
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from pydantic import ValidationError
 
 from db import db
 from models import UserModel, OperationModel, OperationLogModel
-from schemas import  OperationLogSchema,FactorialInputSchema, OperationLogPublicSchema, PowInputSchema, FibonacciInputSchema
-from services.math_logic import compute_factorial,compute_pow,compute_fibonacci
+from schemas.operation_log import OperationLogPublicSchema
+from schemas.input import FactorialInputSchema, FibonacciInputSchema, PowInputSchema
+from services.math_logic import compute_factorial, compute_pow, compute_fibonacci
 
-blp = Blueprint("OperationsLogs","operationsLogs")
+blp = Blueprint("Operation_log", "operation_log", description="Endpoints for operation definitions")
+
 
 @blp.route("/logs/me")
 class LogsForUser(MethodView):
     @jwt_required()
-    @blp.response(200, OperationLogPublicSchema(many=True))
     def get(self):
-        id = get_jwt_identity()
-        user = UserModel.query.get_or_404(id)
+        user_id = get_jwt_identity()
+        user = UserModel.query.get_or_404(user_id)
 
-        if not user:
-            return {"message": "User not found"}, 404
+        logs = OperationLogModel.query.filter_by(user_id=user.id).all()
 
-        logs = db.session.query(OperationLogModel).filter_by(user_id=id).all()
-
-        simplified_logs = []
-        for log in logs:
-            simplified_logs.append({
-                "username": user.username,
-                "operation": log.operation.name,
-                "input": log.input_value,
-                "output": log.output_value,
-                "timestamp":log.timestamp
-            })
-
-        return simplified_logs
+        return jsonify([
+            OperationLogPublicSchema(
+                username=user.username,
+                operation=log.operation.name,
+                input=log.input_value,
+                output=log.output_value,
+                timestamp=log.timestamp
+            ).model_dump()
+            for log in logs
+        ])
 
 @blp.route("/logs")
 class AllLogs(MethodView):
     @jwt_required()
-    @blp.response(200, OperationLogSchema(many=True))
     def get(self):
-        return OperationLogModel.query.all()
+        logs = OperationLogModel.query.all()
+        return jsonify([
+            {
+                "user_id": log.user_id,
+                "operation": log.operation.name,
+                "input": log.input_value,
+                "output": log.output_value,
+                "timestamp": log.timestamp
+            }
+            for log in logs
+        ])
 
 @blp.route("/factorial")
 class FactorialResource(MethodView):
     @jwt_required()
-    @blp.arguments(FactorialInputSchema)
-    @blp.response(200)
-    def post(self, data):
-        id = get_jwt_identity()
-        user = UserModel.query.get_or_404(id)
-        operation = OperationModel.query.filter_by(name="factorial").first()
+    def post(self):
+        try:
+            data = FactorialInputSchema.model_validate_json(request.data)
+        except ValidationError as e:
+            return jsonify(e.errors()), 400
 
-        if not user:
-            abort(404, message="User not found.")
-
+        user = UserModel.query.get_or_404(get_jwt_identity())
         operation = OperationModel.query.filter_by(name="factorial").first()
         if not operation:
             abort(404, message="Operation 'factorial' not found.")
 
-        n = data["n"]
-        input_str = str(n)
-
+        input_str = str(data.n)
         cached = OperationLogModel.query.filter_by(
             operation_id=operation.id,
             input_value=input_str
         ).first()
 
-        if cached:
-            result = cached.output_value
-        else:
-            result = compute_factorial(n)
+        result = cached.output_value if cached else compute_factorial(data.n)
 
         log = OperationLogModel(
             user_id=user.id,
@@ -80,36 +80,29 @@ class FactorialResource(MethodView):
         db.session.add(log)
         db.session.commit()
 
-        return {"result": float(result)}
+        return jsonify({"result": float(result)})
 
 @blp.route("/pow")
 class PowResource(MethodView):
     @jwt_required()
-    @blp.arguments(PowInputSchema)
-    @blp.response(200)
-    def post(self, data):
-        id = get_jwt_identity()
-        user = UserModel.query.get_or_404(id)
-        if not user:
-            abort(404, message="User not found.")
+    def post(self):
+        try:
+            data = PowInputSchema.model_validate_json(request.data)
+        except ValidationError as e:
+            return jsonify(e.errors()), 400
 
+        user = UserModel.query.get_or_404(get_jwt_identity())
         operation = OperationModel.query.filter_by(name="pow").first()
         if not operation:
             abort(404, message="Operation 'pow' not found.")
 
-        base = data["base"]
-        exponent = data["exponent"]
-        input_str = f"{base},{exponent}"
-
+        input_str = f"{data.base},{data.exponent}"
         cached = OperationLogModel.query.filter_by(
             operation_id=operation.id,
             input_value=input_str
         ).first()
 
-        if cached:
-            result = cached.output_value
-        else:
-            result = compute_pow(base, exponent)
+        result = cached.output_value if cached else compute_pow(data.base, data.exponent)
 
         log = OperationLogModel(
             user_id=user.id,
@@ -120,36 +113,29 @@ class PowResource(MethodView):
         db.session.add(log)
         db.session.commit()
 
-        return {"result": float(result)}
+        return jsonify({"result": float(result)})
 
 @blp.route("/fibonacci")
 class FibonacciResource(MethodView):
     @jwt_required()
-    @blp.arguments(FibonacciInputSchema)
-    @blp.response(200)
-    def post(self, data):
-        # Identificare utilizator
-        id = get_jwt_identity()
-        user = UserModel.query.get_or_404(id)
-        if not user:
-            abort(404, message="User not found.")
+    def post(self):
+        try:
+            data = FibonacciInputSchema.model_validate_json(request.data)
+        except ValidationError as e:
+            return jsonify(e.errors()), 400
 
+        user = UserModel.query.get_or_404(get_jwt_identity())
         operation = OperationModel.query.filter_by(name="fibonacci").first()
         if not operation:
             abort(404, message="Operation 'fibonacci' not found.")
 
-        n = data["n"]
-        input_str = str(n)
-
+        input_str = str(data.n)
         cached = OperationLogModel.query.filter_by(
             operation_id=operation.id,
             input_value=input_str
         ).first()
 
-        if cached:
-            result = cached.output_value
-        else:
-            result = compute_fibonacci(n)
+        result = cached.output_value if cached else compute_fibonacci(data.n)
 
         log = OperationLogModel(
             user_id=user.id,
@@ -160,4 +146,4 @@ class FibonacciResource(MethodView):
         db.session.add(log)
         db.session.commit()
 
-        return {"result": int(result)}
+        return jsonify({"result": int(result)})
