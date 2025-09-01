@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: davax-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: davax
+  template:
+    metadata:
+      labels:
+        app: davax
+    spec:
+      containers:
+      - name: davax-container
+        image: davax-api:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5000

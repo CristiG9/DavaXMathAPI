@@ -2,6 +2,45 @@
 
 A JWT-secured RESTful microservice that allows users to perform core mathematical operations (**factorial**, **fibonacci**, and **power**) and logs each request with timestamped records. Built using Flask, this project follows clean microservice principles and offers API documentation via Swagger.
 
+##  DevOps Homework Summary
+
+This project was developed as part of a DevOps assignment focused on Docker-based containerization and Kubernetes deployment via Rancher Desktop.
+
+###  What I did:
+
+- Built a lightweight Python Flask web service with math operations
+- Wrote a `Dockerfile` to containerize the app
+- Used `docker-compose` for local development and testing
+- Built the Docker image locally and ensured it runs successfully
+- Wrote Kubernetes manifests (`deployment.yaml`, `service.yaml`)
+- Deployed the container to a Rancher Desktop Kubernetes cluster
+- Used port-forwarding to access the app from the host
+
+---
+
+### Commands I ran
+
+#### Docker (local build & run)
+
+```bash
+docker build -t davax-api:latest .
+docker-compose up --build
+```
+
+#### Kubernetes (Rancher Desktop)
+
+```bash
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+kubectl get pods
+kubectl get svc
+kubectl port-forward service/davax-service 8080:80
+```
+
+Then opened the app at:  
+
+http://localhost:8080
+
 ---
 
 ##  API Endpoints
@@ -51,6 +90,7 @@ app/
 ├── routes/         → REST endpoints grouped by feature
 ├── schemas/        → Pydantic validation and serialization
 ├── services/       → Business logic (math functions, utilities)
+├── k8s/            → Kubernetes manifests for application deployment and service exposure   
 ├── config.py       → App configuration (JWT secret, DB URI)
 app.py              → App entry point
 ```

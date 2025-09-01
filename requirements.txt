@@ -1,4 +1,5 @@
 flask~=3.1.1
+flask-smorest
 python-dotenv
 sqlalchemy
 flask-sqlalchemy
@@ -7,4 +8,3 @@ passlib
 flask-migrate
 pydantic
 pydantic[email]
-lru_cache
